@@ -18,6 +18,9 @@ class RepoBrowserViewModel(application: Application) : AndroidViewModel(applicat
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
     private val repository: RepoRepository
 
     init {
@@ -29,15 +32,18 @@ class RepoBrowserViewModel(application: Application) : AndroidViewModel(applicat
     fun loadRoot(owner: String, repo: String) {
         viewModelScope.launch {
             _loading.value = true
+            _error.value = null
             try {
                 val resp = repository.getContentsRoot(owner, repo)
                 if (resp.isSuccessful) {
                     _items.value = resp.body() ?: emptyList()
                 } else {
                     _items.value = emptyList()
+                    _error.value = "${resp.code()} ${resp.message()}"
                 }
             } catch (e: Exception) {
                 _items.value = emptyList()
+                _error.value = e.message ?: "Unknown error"
             } finally {
                 _loading.value = false
             }
@@ -47,15 +53,18 @@ class RepoBrowserViewModel(application: Application) : AndroidViewModel(applicat
     fun loadPath(owner: String, repo: String, path: String) {
         viewModelScope.launch {
             _loading.value = true
+            _error.value = null
             try {
                 val resp = repository.getContents(owner, repo, path)
                 if (resp.isSuccessful) {
                     _items.value = resp.body() ?: emptyList()
                 } else {
                     _items.value = emptyList()
+                    _error.value = "${resp.code()} ${resp.message()}"
                 }
             } catch (e: Exception) {
                 _items.value = emptyList()
+                _error.value = e.message ?: "Unknown error"
             } finally {
                 _loading.value = false
             }
