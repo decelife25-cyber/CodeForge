@@ -3,7 +3,7 @@ package com.codeforge.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.codeforge.app.ui.MainScreen
+import com.codeforge.app.ui.AppNavHost
 import com.codeforge.app.ui.theme.CodeForgeTheme
 
 class MainActivity : ComponentActivity() {
@@ -11,7 +11,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CodeForgeTheme {
-                MainScreen()
+                AppNavHost()
             }
         }
     }
