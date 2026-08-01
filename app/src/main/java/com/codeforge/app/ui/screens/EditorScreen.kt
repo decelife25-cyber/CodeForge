@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -20,6 +21,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.codeforge.ui.viewmodel.EditorViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @Composable
 fun EditorScreen(owner: String, repo: String, path: String, onSaved: () -> Unit) {
@@ -123,7 +125,7 @@ fun EditorScreen(owner: String, repo: String, path: String, onSaved: () -> Unit)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     Button(onClick = {
                         showConfirmExit = true
-                    }, colors = ButtonDefaults.outlinedButtonColors(), modifier = Modifier.padding(end = 8.dp)) {
+                    }, modifier = Modifier.padding(end = 8.dp)) {
                         Text("Cancel")
                     }
 
