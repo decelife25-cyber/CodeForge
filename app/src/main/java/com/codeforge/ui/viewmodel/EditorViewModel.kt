@@ -23,6 +23,9 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
     private val repository: RepoRepository
 
     init {
@@ -34,12 +37,15 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
     fun loadFile(owner: String, repo: String, path: String) {
         viewModelScope.launch {
             _loading.value = true
+            _error.value = null
             try {
                 val resp = repository.getFile(owner, repo, path, null)
                 if (resp.isSuccessful) {
                     val item: ContentItem? = resp.body()
                     if (item != null && item.content != null) {
-                        val bytes = Base64.decode(item.content, Base64.DEFAULT)
+                        // GitHub returns base64 content possibly with newlines
+                        val cleaned = item.content.replace("\n", "")
+                        val bytes = Base64.decode(cleaned, Base64.DEFAULT)
                         _content.value = String(bytes)
                         _sha.value = item.sha
                     } else {
@@ -49,10 +55,19 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
                 } else {
                     _content.value = null
                     _sha.value = null
+                    if (resp.code() == 401) {
+                        TokenStorage.clearToken(getApplication())
+                        _error.value = "Authentication required. Please login again."
+                    } else if (resp.code() == 404) {
+                        _error.value = "File not found"
+                    } else {
+                        _error.value = "${resp.code()} ${resp.message()}"
+                    }
                 }
             } catch (e: Exception) {
                 _content.value = null
                 _sha.value = null
+                _error.value = e.message ?: "Unknown error"
             } finally {
                 _loading.value = false
             }
@@ -62,14 +77,26 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
     fun saveFile(owner: String, repo: String, path: String, newContent: String, message: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             _loading.value = true
+            _error.value = null
             try {
                 val encoded = Base64.encodeToString(newContent.toByteArray(), Base64.NO_WRAP)
                 val req = CreateUpdateFileRequest(message = message, content = encoded, sha = _sha.value)
                 val resp = repository.createOrUpdateFile(owner, repo, path, req)
                 if (resp.isSuccessful) {
+                    // update sha if provided
+                    _sha.value = resp.body()?.content?.sha
                     onResult(true, null)
                 } else {
-                    onResult(false, "${resp.code()} ${resp.errorBody()?.string()}")
+                    if (resp.code() == 401) {
+                        TokenStorage.clearToken(getApplication())
+                        _error.value = "Authentication required. Please login again."
+                        onResult(false, "Authentication required")
+                    } else if (resp.code() == 409) {
+                        onResult(false, "Conflict: file has changed on remote (SHA mismatch)")
+                    } else {
+                        val err = try { resp.errorBody()?.string() } catch (e: Exception) { null }
+                        onResult(false, "${resp.code()} ${resp.message()} - ${err ?: ""}")
+                    }
                 }
             } catch (e: Exception) {
                 onResult(false, e.message)

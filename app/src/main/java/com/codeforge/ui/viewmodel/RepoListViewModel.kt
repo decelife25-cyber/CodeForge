@@ -39,7 +39,13 @@ class RepoListViewModel(application: Application) : AndroidViewModel(application
                     _repos.value = resp.body() ?: emptyList()
                 } else {
                     _repos.value = emptyList()
-                    _error.value = "${resp.code()} ${resp.message()}"
+                    if (resp.code() == 401) {
+                        // Token invalid or expired
+                        TokenStorage.clearToken(getApplication())
+                        _error.value = "Authentication required. Please login again."
+                    } else {
+                        _error.value = "${resp.code()} ${resp.message()}"
+                    }
                 }
             } catch (e: Exception) {
                 _repos.value = emptyList()

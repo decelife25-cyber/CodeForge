@@ -8,6 +8,7 @@ import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.util.concurrent.TimeUnit
 
 object NetworkModule {
     private const val BASE_URL = "https://api.github.com/"
@@ -18,6 +19,9 @@ object NetworkModule {
             .build()
 
         val clientBuilder = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
 
         // Add Authorization header if token is provided
         if (!token.isNullOrEmpty()) {
@@ -31,7 +35,7 @@ object NetworkModule {
 
         if (enableLogging) {
             val logging = HttpLoggingInterceptor()
-            logging.level = HttpLoggingInterceptor.Level.BASIC
+            logging.level = HttpLoggingInterceptor.Level.BODY
             clientBuilder.addInterceptor(logging)
         }
 

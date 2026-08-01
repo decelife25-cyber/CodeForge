@@ -39,7 +39,12 @@ class RepoBrowserViewModel(application: Application) : AndroidViewModel(applicat
                     _items.value = resp.body() ?: emptyList()
                 } else {
                     _items.value = emptyList()
-                    _error.value = "${resp.code()} ${resp.message()}"
+                    if (resp.code() == 401) {
+                        TokenStorage.clearToken(getApplication())
+                        _error.value = "Authentication required. Please login again."
+                    } else {
+                        _error.value = "${resp.code()} ${resp.message()}"
+                    }
                 }
             } catch (e: Exception) {
                 _items.value = emptyList()
@@ -60,7 +65,12 @@ class RepoBrowserViewModel(application: Application) : AndroidViewModel(applicat
                     _items.value = resp.body() ?: emptyList()
                 } else {
                     _items.value = emptyList()
-                    _error.value = "${resp.code()} ${resp.message()}"
+                    if (resp.code() == 401) {
+                        TokenStorage.clearToken(getApplication())
+                        _error.value = "Authentication required. Please login again."
+                    } else {
+                        _error.value = "${resp.code()} ${resp.message()}"
+                    }
                 }
             } catch (e: Exception) {
                 _items.value = emptyList()
