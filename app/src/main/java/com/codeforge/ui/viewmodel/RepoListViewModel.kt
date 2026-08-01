@@ -18,6 +18,9 @@ class RepoListViewModel(application: Application) : AndroidViewModel(application
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
     private val repository: RepoRepository
 
     init {
@@ -29,15 +32,18 @@ class RepoListViewModel(application: Application) : AndroidViewModel(application
     fun loadRepos() {
         viewModelScope.launch {
             _loading.value = true
+            _error.value = null
             try {
                 val resp = repository.listUserRepos()
                 if (resp.isSuccessful) {
                     _repos.value = resp.body() ?: emptyList()
                 } else {
                     _repos.value = emptyList()
+                    _error.value = "${resp.code()} ${resp.message()}"
                 }
             } catch (e: Exception) {
                 _repos.value = emptyList()
+                _error.value = e.message ?: "Unknown error"
             } finally {
                 _loading.value = false
             }
