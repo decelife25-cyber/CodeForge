@@ -37,3 +37,11 @@ data class CreateUpdateFileResponse(
     val content: ContentItem?,
     val commit: Any?
 )
+
+// Request body for deleting a file
+@JsonClass(generateAdapter = true)
+data class DeleteFileRequest(
+    val message: String,
+    val sha: String,
+    val branch: String? = null
+)

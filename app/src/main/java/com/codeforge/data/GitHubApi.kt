@@ -35,4 +35,12 @@ interface GitHubApi {
         @Path(value = "path", encoded = true) path: String,
         @Body body: CreateUpdateFileRequest
     ): Response<CreateUpdateFileResponse>
+
+    @HTTP(method = "DELETE", path = "/repos/{owner}/{repo}/contents/{path}", hasBody = true)
+    suspend fun deleteFile(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String,
+        @Path(value = "path", encoded = true) path: String,
+        @Body body: DeleteFileRequest
+    ): Response<CreateUpdateFileResponse>
 }
