@@ -1,7 +1,9 @@
 package com.codeforge.app.ui
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,11 +13,15 @@ import com.codeforge.app.ui.screens.EditorScreen
 import com.codeforge.app.ui.screens.LoginScreen
 import com.codeforge.app.ui.screens.RepoBrowserScreen
 import com.codeforge.app.ui.screens.RepoListScreen
+import com.codeforge.auth.TokenStorage
 
 @Composable
 fun AppNavHost(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "login", modifier = modifier) {
+    val context = LocalContext.current
+    val startDestination = if (hasToken(context)) "repos" else "login"
+
+    NavHost(navController = navController, startDestination = startDestination, modifier = modifier) {
         composable("login") {
             LoginScreen(onLoginSuccess = {
                 navController.navigate("repos")
@@ -52,4 +58,8 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             })
         }
     }
+}
+
+private fun hasToken(context: Context): Boolean {
+    return TokenStorage.getToken(context) != null
 }
