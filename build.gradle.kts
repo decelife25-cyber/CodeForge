@@ -4,4 +4,10 @@ plugins {
     id("org.jetbrains.kotlin.android") version "1.9.10" apply false
 }
 
-// Keep build script minimal for the MVP
+// Ensure repositories are available for root project tasks
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
