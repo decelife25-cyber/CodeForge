@@ -5,9 +5,4 @@ plugins {
 }
 
 // Ensure repositories are available for root project tasks
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
+
