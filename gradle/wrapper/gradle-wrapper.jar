@@ -1,0 +1,7 @@
+This is a placeholder file for gradle-wrapper.jar.
+
+I could not fetch the binary gradle-wrapper.jar directly in this environment. To complete the Gradle wrapper installation, download the official gradle-wrapper.jar for Gradle 8.4 from:
+
+https://github.com/gradle/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar
+
+and replace this placeholder with the binary JAR at gradle/wrapper/gradle-wrapper.jar.
