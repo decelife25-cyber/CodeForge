@@ -34,12 +34,12 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
         repository = RepoRepository(api)
     }
 
-    fun loadFile(owner: String, repo: String, path: String) {
+    fun loadFile(owner: String, repo: String, path: String, branch: String? = null) {
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
             try {
-                val resp = repository.getFile(owner, repo, path, null)
+                val resp = repository.getFile(owner, repo, path, branch)
                 if (resp.isSuccessful) {
                     val item: ContentItem? = resp.body()
                     if (item != null && item.content != null) {
@@ -74,13 +74,13 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun saveFile(owner: String, repo: String, path: String, newContent: String, message: String, onResult: (Boolean, String?) -> Unit) {
+    fun saveFile(owner: String, repo: String, path: String, newContent: String, message: String, branch: String? = null, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
             try {
                 val encoded = Base64.encodeToString(newContent.toByteArray(), Base64.NO_WRAP)
-                val req = CreateUpdateFileRequest(message = message, content = encoded, sha = _sha.value)
+                val req = CreateUpdateFileRequest(message = message, content = encoded, branch = branch, sha = _sha.value)
                 val resp = repository.createOrUpdateFile(owner, repo, path, req)
                 if (resp.isSuccessful) {
                     // update sha if provided
