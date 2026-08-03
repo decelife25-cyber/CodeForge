@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,24 +18,22 @@ import androidx.compose.ui.unit.dp
 import com.codeforge.auth.AuthConfig
 import com.codeforge.auth.AuthUtils
 import com.codeforge.auth.TokenStorage
-import java.util.*
+import java.util.UUID
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
     val context = LocalContext.current
-
+    if (TokenStorage.getToken(context) != null) {
+        onLoginSuccess()
+    }
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("CodeForge")
-        Text("\nLogin with GitHub using PKCE.\n", modifier = Modifier.padding(8.dp))
-        Button(onClick = { startOAuthFlow(context) }) {
-            Text("Login with GitHub")
-        }
+        Text("CodeForge", style = MaterialTheme.typography.headlineMedium)
+        Text("Login with GitHub using PKCE.", modifier = Modifier.padding(vertical = 16.dp))
+        Button(onClick = { startOAuthFlow(context) }) { Text("Login with GitHub") }
     }
 }
 
@@ -56,7 +55,5 @@ private fun startOAuthFlow(context: Context) {
         .appendQueryParameter("code_challenge", challenge)
         .appendQueryParameter("code_challenge_method", "S256")
         .build()
-
-    val intent = Intent(Intent.ACTION_VIEW, url)
-    context.startActivity(intent)
+    context.startActivity(Intent(Intent.ACTION_VIEW, url))
 }

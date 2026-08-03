@@ -4,14 +4,6 @@ pluginManagement {
         google()
         mavenCentral()
     }
-    resolutionStrategy {
-        eachPlugin {
-            when (requested.id.id) {
-                "com.android.application" -> useModule("com.android.tools.build:gradle:8.1.0")
-                "org.jetbrains.kotlin.android", "org.jetbrains.kotlin.jvm", "org.jetbrains.kotlin.kapt" -> useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.10")
-            }
-        }
-    }
 }
 
 dependencyResolutionManagement {
@@ -19,7 +11,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        mavenLocal()
     }
 }
 

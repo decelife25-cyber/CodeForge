@@ -23,12 +23,12 @@ object NetworkModule {
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
 
-        // Add Authorization header if token is provided
         if (!token.isNullOrEmpty()) {
             clientBuilder.addInterceptor(Interceptor { chain ->
                 val original: Request = chain.request()
                 val builder = original.newBuilder()
-                builder.header("Authorization", "Bearer $token")
+                builder.header("Authorization", "token $token")
+                builder.header("Accept", "application/vnd.github+json")
                 chain.proceed(builder.build())
             })
         }
