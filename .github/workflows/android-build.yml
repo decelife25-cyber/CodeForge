@@ -5,7 +5,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -42,3 +42,35 @@ jobs:
           name: debug-apk
           path: '**/build/outputs/apk/debug/*.apk'
           if-no-files-found: error
+
+      - name: Manage APK Directory
+        if: success()
+        run: |
+          mkdir -p APK
+          APK_PATH=$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)
+          TIMESTAMP=$(date +"%Y%m%d-%H%M")
+
+          # Copy to latest
+          cp "$APK_PATH" "APK/CodeForge-latest-debug.apk"
+
+          # Copy to timestamped version
+          cp "$APK_PATH" "APK/CodeForge-debug-${TIMESTAMP}.apk"
+
+          # Keep only the 10 most recent timestamped APKs
+          cd APK
+          ls -t CodeForge-debug-*.apk | tail -n +11 | xargs -r rm -f
+
+      - name: Commit and push APK directory
+        if: success()
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add APK/
+
+          # Only commit and push if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "Update APKs [skip ci]"
+            git push
+          else
+            echo "No changes to commit"
+          fi
