@@ -111,7 +111,10 @@ data class CommitParent(
 @JsonClass(generateAdapter = true)
 data class CommitFile(
     val filename: String,
-    val patch: String? = null
+    val patch: String? = null,
+    val status: String? = null,
+    val additions: Int = 0,
+    val deletions: Int = 0
 )
 
 @JsonClass(generateAdapter = true)

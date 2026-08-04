@@ -14,8 +14,7 @@ pluginManagement {
                     useModule("com.android.tools.build:gradle:${requested.version}")
                 "org.jetbrains.kotlin.android",
                 "org.jetbrains.kotlin.jvm",
-                "org.jetbrains.kotlin.kapt",
-                "org.jetbrains.kotlin.plugin.compose" ->
+                "org.jetbrains.kotlin.kapt" ->
                     useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}")
             }
         }
