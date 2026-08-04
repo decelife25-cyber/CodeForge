@@ -78,3 +78,4 @@ Thumbs.db
 
 # Exclude build directories in all subprojects
 **/build/
+!/APK/*.apk
