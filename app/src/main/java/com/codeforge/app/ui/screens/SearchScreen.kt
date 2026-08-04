@@ -65,8 +65,8 @@ fun SearchScreen(
                     trailingIcon = {
                         IconButton(onClick = {
                             if (query.isNotBlank()) {
-                                if (searchMode == 0) vm.searchFiles(owner, repo, query)
-                                else vm.searchText(owner, repo, query)
+                                if (searchMode == 0) vm.search(owner, repo, query, true)
+                                else vm.search(owner, repo, query, false)
                             }
                         }) { Icon(Icons.Default.Search, null) }
                     }

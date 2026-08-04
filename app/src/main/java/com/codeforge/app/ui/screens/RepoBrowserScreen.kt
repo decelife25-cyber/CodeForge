@@ -54,12 +54,12 @@ fun RepoBrowserScreen(
     var operationLoading by remember { mutableStateOf(false) }
     var showFabMenu by remember { mutableStateOf(false) }
 
-    val currentPath = vm.currentPath
+    val currentPath = vm.pathStack.collectAsState().value.lastOrNull()
     val isRoot = pathStack.size <= 1
 
     // Sync external branch into VM
     LaunchedEffect(externalBranch) {
-        vm.setBranch(externalBranch)
+        vm.switchBranch(owner, repo, externalBranch)
     }
 
     LaunchedEffect(owner, repo) {
@@ -68,11 +68,11 @@ fun RepoBrowserScreen(
 
     // When external branch changes, reload from root
     LaunchedEffect(externalBranch) {
-        vm.resetToRoot(owner, repo)
+        vm.loadRoot(owner, repo)
     }
 
     BackHandler(enabled = !isRoot) {
-        vm.navigateUp(owner, repo)
+        vm.navigateBack(owner, repo)
     }
 
     Scaffold(
@@ -87,7 +87,7 @@ fun RepoBrowserScreen(
                 },
                 navigationIcon = {
                     if (!isRoot) {
-                        IconButton(onClick = { vm.navigateUp(owner, repo) }) {
+                        IconButton(onClick = { vm.navigateBack(owner, repo) }) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Up")
                         }
                     }
@@ -95,7 +95,7 @@ fun RepoBrowserScreen(
                 actions = {
                     val branchLabel = externalBranch.ifEmpty { "default" }
                     TextButton(onClick = onNavigateBranches) {
-                        Icon(Icons.Default.AccountTree, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(branchLabel, style = MaterialTheme.typography.labelSmall)
                     }
@@ -103,10 +103,10 @@ fun RepoBrowserScreen(
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
                     IconButton(onClick = onNavigateCommits) {
-                        Icon(Icons.Default.History, contentDescription = "Commits")
+                        Icon(Icons.Default.List, contentDescription = "Commits")
                     }
                     IconButton(onClick = onNavigatePRs) {
-                        Icon(Icons.Default.MergeType, contentDescription = "Pull Requests")
+                        Icon(Icons.Default.Share, contentDescription = "Pull Requests")
                     }
                 }
             )
@@ -119,12 +119,12 @@ fun RepoBrowserScreen(
                 DropdownMenu(expanded = showFabMenu, onDismissRequest = { showFabMenu = false }) {
                     DropdownMenuItem(
                         text = { Text("New File") },
-                        leadingIcon = { Icon(Icons.Default.InsertDriveFile, null) },
+                        leadingIcon = { Icon(Icons.Default.Add, null) },
                         onClick = { showFabMenu = false; dialogInput = ""; showCreateFileDialog = true }
                     )
                     DropdownMenuItem(
                         text = { Text("New Folder") },
-                        leadingIcon = { Icon(Icons.Default.CreateNewFolder, null) },
+                        leadingIcon = { Icon(Icons.Default.Add, null) },
                         onClick = { showFabMenu = false; dialogInput = ""; showCreateFolderDialog = true }
                     )
                 }
@@ -143,7 +143,7 @@ fun RepoBrowserScreen(
                 else -> ContentList(
                     items = items,
                     onOpenFile = onOpenFile,
-                    onOpenDir = { dir -> vm.navigateInto(dir.path, owner, repo) },
+                    onOpenDir = { dir -> vm.navigateTo(owner, repo, dir.path) },
                     onRename = { item -> dialogInput = item.name; showRenameDialog = item },
                     onDelete = { item -> showDeleteDialog = item }
                 )
@@ -170,16 +170,15 @@ fun RepoBrowserScreen(
                         showCreateFileDialog = false
                         operationLoading = true
                         val filePath = if (currentPath != null) "$currentPath/$name" else name
-                        val branch = vm.getBranch()
-                        scope.launch {
-                            val resp = vm.getRepository().createFile(owner, repo, filePath, ByteArray(0), "Create $name", branch)
+                        vm.createFile(owner, repo, filePath, "Create $name", "") { ok, err ->
                             operationLoading = false
-                            if (resp.isSuccessful) {
-                                vm.loadCurrent(owner, repo)
-                                snackbarHostState.showSnackbar("File created")
-                                onOpenFile(filePath)
-                            } else {
-                                snackbarHostState.showSnackbar("Failed: ${resp.code()} ${resp.message()}")
+                            scope.launch {
+                                if (ok) {
+                                    snackbarHostState.showSnackbar("File created")
+                                    onOpenFile(filePath)
+                                } else {
+                                    snackbarHostState.showSnackbar("Failed: $err")
+                                }
                             }
                         }
                     }
@@ -208,15 +207,14 @@ fun RepoBrowserScreen(
                         showCreateFolderDialog = false
                         operationLoading = true
                         val folderPath = if (currentPath != null) "$currentPath/$name" else name
-                        val branch = vm.getBranch()
-                        scope.launch {
-                            val resp = vm.getRepository().createFolder(owner, repo, folderPath, "Create folder $name", branch)
+                        vm.createFolder(owner, repo, folderPath, "Create folder $name") { ok, err ->
                             operationLoading = false
-                            if (resp.isSuccessful) {
-                                vm.loadCurrent(owner, repo)
-                                snackbarHostState.showSnackbar("Folder created")
-                            } else {
-                                snackbarHostState.showSnackbar("Failed: ${resp.code()} ${resp.message()}")
+                            scope.launch {
+                                if (ok) {
+                                    snackbarHostState.showSnackbar("Folder created")
+                                } else {
+                                    snackbarHostState.showSnackbar("Failed: $err")
+                                }
                             }
                         }
                     }
@@ -246,15 +244,14 @@ fun RepoBrowserScreen(
                         operationLoading = true
                         val parentPath = currentPath
                         val toPath = if (parentPath != null) "$parentPath/$newName" else newName
-                        val branch = vm.getBranch()
-                        scope.launch {
-                            val (ok, err) = vm.getRepository().renameFile(owner, repo, item.path, toPath, "Rename ${item.name} to $newName", branch)
+                        vm.renameItem(owner, repo, item, toPath) { ok, err ->
                             operationLoading = false
-                            if (ok) {
-                                vm.loadCurrent(owner, repo)
-                                snackbarHostState.showSnackbar("Renamed successfully")
-                            } else {
-                                snackbarHostState.showSnackbar("Rename failed: $err")
+                            scope.launch {
+                                if (ok) {
+                                    snackbarHostState.showSnackbar("Renamed successfully")
+                                } else {
+                                    snackbarHostState.showSnackbar("Failed: $err")
+                                }
                             }
                         }
                     } else {
@@ -276,15 +273,14 @@ fun RepoBrowserScreen(
                     showDeleteDialog = null
                     if (item.type == "file" && item.sha != null) {
                         operationLoading = true
-                        val branch = vm.getBranch()
-                        scope.launch {
-                            val resp = vm.getRepository().deleteFile(owner, repo, item.path, item.sha, "Delete ${item.name}", branch)
+                        vm.deleteItem(owner, repo, item) { ok, err ->
                             operationLoading = false
-                            if (resp.isSuccessful) {
-                                vm.loadCurrent(owner, repo)
-                                snackbarHostState.showSnackbar("Deleted")
-                            } else {
-                                snackbarHostState.showSnackbar("Failed: ${resp.code()} ${resp.message()}")
+                            scope.launch {
+                                if (ok) {
+                                    snackbarHostState.showSnackbar("Deleted successfully")
+                                } else {
+                                    snackbarHostState.showSnackbar("Failed: $err")
+                                }
                             }
                         }
                     }
@@ -333,7 +329,7 @@ private fun ContentItemRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = if (item.type == "dir") Icons.Default.Folder else Icons.Default.InsertDriveFile,
+            imageVector = if (item.type == "dir") Icons.Default.MoreVert else Icons.Default.Add,
             contentDescription = null,
             tint = if (item.type == "dir") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
         )
@@ -351,7 +347,7 @@ private fun ContentItemRow(
                 if (item.type == "file") {
                     DropdownMenuItem(
                         text = { Text("Rename") },
-                        leadingIcon = { Icon(Icons.Default.DriveFileRenameOutline, null) },
+                        leadingIcon = { Icon(Icons.Default.Edit, null) },
                         onClick = { showMenu = false; onRename(item) }
                     )
                     DropdownMenuItem(

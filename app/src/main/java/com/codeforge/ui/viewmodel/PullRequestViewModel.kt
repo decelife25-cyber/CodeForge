@@ -21,14 +21,19 @@ class PullRequestViewModel(application: Application) : AndroidViewModel(applicat
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    fun loadPullRequests(owner: String, repo: String) {
+    fun loadPullRequests(owner: String, repo: String, stateFilter: String = "open") {
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
             try {
+                // The API call listPullRequests in RepoRepository may not take stateFilter.
+                // Depending on its implementation, we can just fetch and filter locally, or pass it if possible.
+                // Assuming it takes only owner and repo for now based on current interface.
                 val response = repository.listPullRequests(owner, repo)
-                if (response.isSuccessful) _pullRequests.value = response.body().orEmpty()
-                else _error.value = "${response.code()} ${response.message()}"
+                if (response.isSuccessful) {
+                    val allPrs = response.body().orEmpty()
+                    _pullRequests.value = if (stateFilter == "all") allPrs else allPrs.filter { it.state == stateFilter }
+                } else _error.value = "${response.code()} ${response.message()}"
             } catch (e: Exception) {
                 _error.value = e.message
             } finally {
