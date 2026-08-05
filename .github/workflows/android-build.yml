@@ -35,31 +35,54 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug
 
+      - name: Generate Release Keystore
+        run: |
+          mkdir -p keystore
+          keytool -genkey -v -keystore keystore/release.keystore -alias androidreleasekey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=CodeForge, OU=Development, O=CodeForge, L=Unknown, S=Unknown, C=US"
+
+      - name: Assemble release APK
+        run: ./gradlew assembleRelease
+
+      - name: Verify release APK signature
+        run: |
+          BUILD_TOOLS_DIR=$(ls -d /usr/local/lib/android/sdk/build-tools/* | tail -1)
+          $BUILD_TOOLS_DIR/apksigner verify --verbose app/build/outputs/apk/release/app-release.apk
+          $BUILD_TOOLS_DIR/apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
+
       - name: Generate and Commit APKs
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           mkdir -p APK
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+          DEBUG_APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE_APK_PATH="app/build/outputs/apk/release/app-release.apk"
 
-          if [ -f "$APK_PATH" ]; then
-            cp "$APK_PATH" "APK/app-latest-debug.apk"
-            cp "$APK_PATH" "APK/app-debug-$TIMESTAMP.apk"
+          if [ -f "$DEBUG_APK_PATH" ] && [ -f "$RELEASE_APK_PATH" ]; then
+            cp "$DEBUG_APK_PATH" "APK/CodeForge-latest-debug.apk"
+            cp "$DEBUG_APK_PATH" "APK/CodeForge-debug-$TIMESTAMP.apk"
+
+            cp "$RELEASE_APK_PATH" "APK/CodeForge-latest-release.apk"
+            cp "$RELEASE_APK_PATH" "APK/CodeForge-release-$TIMESTAMP.apk"
 
             # Keep only the 10 most recent timestamped APKs
             cd APK
-            ls -t app-debug-*.apk | tail -n +11 | xargs -I {} rm -- {} || true
+            ls -t CodeForge-debug-*.apk | tail -n +11 | xargs -I {} rm -- {} || true
+            ls -t CodeForge-release-*.apk | tail -n +11 | xargs -I {} rm -- {} || true
             cd ..
 
             # Commit and push
             git config --global user.name "github-actions[bot]"
             git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git status
+            ls -la APK/
             git add -f APK/
             git status
             git commit -m "chore: Update APKs [skip ci]" || echo "No changes to commit"
             git push origin HEAD:main
+            git status
+            ls -la APK/
           else
-            echo "APK not found at $APK_PATH"
+            echo "APK not found"
             exit 1
           fi
 
@@ -69,4 +92,12 @@ jobs:
         with:
           name: debug-apk
           path: '**/build/outputs/apk/debug/*.apk'
+          if-no-files-found: error
+
+      - name: Upload release APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: '**/build/outputs/apk/release/*.apk'
           if-no-files-found: error
