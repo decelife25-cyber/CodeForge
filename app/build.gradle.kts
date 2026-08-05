@@ -15,10 +15,20 @@ android {
         versionName = "0.1"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../keystore/release.keystore")
+            storePassword = "android"
+            keyAlias = "androidreleasekey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
