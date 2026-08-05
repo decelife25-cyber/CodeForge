@@ -58,6 +58,7 @@ class AuthRedirectActivity : ComponentActivity() {
                 .add("code", code)
                 .add("code_verifier", verifier)
                 .add("redirect_uri", AuthConfig.REDIRECT_URI)
+                .add("grant_type", "authorization_code")
                 .build()
 
             val request = Request.Builder()
