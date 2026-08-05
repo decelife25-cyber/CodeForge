@@ -77,9 +77,17 @@ class AuthRedirectActivity : ComponentActivity() {
                 .header("Accept", "application/json")
                 .build()
 
+            println("request parameters:")
+            println("client_id: ${AuthConfig.CLIENT_ID}")
+            println("code: $code")
+            println("redirect_uri: ${AuthConfig.REDIRECT_URI}")
+            println("grant_type: authorization_code")
+
             android.util.Log.d("OAuth", "Executing HTTP call")
             val resp = client.newCall(request).execute()
             val body = resp.body?.string()
+            println("HTTP status: ${resp.code}")
+            println("complete response body: $body")
             android.util.Log.d("OAuth", "Response HTTP Status: ${resp.code}")
             android.util.Log.d("OAuth", "Response Body: $body")
 
