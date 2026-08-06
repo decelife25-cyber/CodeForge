@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.codeforge.app"
+    namespace = "com.cartadigital.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.codeforge.app"
+        applicationId = "com.cartadigital.app"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

@@ -29,5 +29,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CodeForge"
+rootProject.name = "CartaDigital"
 include(":app")
